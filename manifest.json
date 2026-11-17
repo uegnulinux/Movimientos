@@ -1,8 +1,10 @@
 {
   "name": "Movimientos — Gestión Integral",
   "short_name": "Movimientos",
+  "description": "Aplicación de gestión integral y control de movimientos financieros personales y operativos en Bolivianos.",
   "start_url": "./index.html",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f4f5f7",
   "theme_color": "#d97706",
   "icons": [
@@ -15,6 +17,12 @@
       "src": "./icono_app.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "./icono_app.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
