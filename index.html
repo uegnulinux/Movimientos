@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Movimientos — Gestión Integral</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #d97706;
+      --ingreso: #00acc1;
+      --gasto: #e53935;
+      --deuda: #fb8c00;
+      --border: #e5e7eb;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px 12px 80px;
+      font-size: 20px; /* Tamaño base extra grande para móvil */
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      gap: 10px;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .saldo-pill {
+      background: var(--card);
+      padding: 12px 18px;
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--text);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      white-space: nowrap;
+    }
+
+    .saldo-positivo { color: #059669; }
+    .saldo-negativo { color: #dc2626; }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .action-card {
+      background: var(--card);
+      border: 3px solid transparent;
+      border-radius: 20px;
+      padding: 20px 8px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .action-card.active-ingreso { border-color: var(--ingreso); background: #f0fdff; }
+    .action-card.active-gasto { border-color: var(--gasto); background: #fff5f5; }
+    .action-card.active-deuda { border-color: var(--deuda); background: #fffaf0; }
+
+    .card-icon {
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .icon-ingreso { color: var(--ingreso); }
+    .icon-gasto { color: var(--gasto); }
+    .icon-deuda {
+      color: var(--deuda);
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--deuda);
+      border-radius: 50%;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .card-total {
+      font-size: 1rem;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 999px;
+      margin-top: 4px;
+    }
+
+    .total-ingreso { background: rgba(0, 172, 193, 0.15); color: #007c91; }
+    .total-gasto { background: rgba(229, 57, 53, 0.15); color: #b71c1c; }
+    .total-deuda { background: rgba(251, 140, 0, 0.18); color: #b25e00; }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-header h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill-btn {
+      background: var(--card);
+      border: 2px solid var(--border);
+      color: var(--muted);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .pill-btn.active {
+      background: var(--text);
+      color: #fff;
+      border-color: var(--text);
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-direction: column;
+    }
+
+    .search-row input, .search-row select {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 1.15rem; /* Texto grande en inputs */
+      color: var(--text);
+      outline: none;
+      width: 100%;
+    }
+
+    .mov-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .mov-item {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-left: 6px solid transparent;
+    }
+
+    .mov-item.tipo-ingreso { border-left-color: var(--ingreso); }
+    .mov-item.tipo-gasto { border-left-color: var(--gasto); }
+    .mov-item.tipo-deuda { border-left-color: var(--deuda); }
+
+    .mov-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .mov-desc {
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--text);
+    }
+
+    .mov-meta {
+      font-size: 0.95rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .badge-pilar {
+      background: #e5e7eb;
+      color: #1f2937;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    .mov-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mov-monto {
+      font-weight: 800;
+      font-size: 1.25rem;
+      white-space: nowrap;
+    }
+
+    .monto-ingreso { color: #00838f; }
+    .monto-gasto { color: #c62828; }
+    .monto-deuda { color: #ef6c00; }
+
+    .btn-del {
+      background: #fee2e2;
+      border: none;
+      color: #dc2626;
+      cursor: pointer;
+      font-size: 1.5rem;
+      padding: 8px 12px;
+      border-radius: 10px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--card);
+      border-radius: 18px;
+      color: var(--muted);
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--card);
+      width: 100%;
+      max-width: 480px;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h3 { font-size: 1.5rem; font-weight: 800; }
+
+    .close-btn {
+      background: #f3f4f6;
+      border: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: var(--text);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #374151;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      font-size: 1.15rem;
+      background: var(--card);
+      color: var(--text);
+    }
+
+    .btn-add-inline {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 0 20px;
+      font-weight: 800;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 18px;
+      border: none;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: #fff;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .bg-ingreso { background: var(--ingreso); }
+    .bg-gasto { background: var(--gasto); }
+    .bg-deuda { background: var(--deuda); }
+
+    .footer-tools {
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+      background: var(--card);
+      border: 2px solid var(--border);
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Movimientos</h1>
+      <div class="saldo-pill" id="saldoDisplay">Saldo: Bs 0.00</div>
+    </div>
+
+    <div class="cards-grid">
+      <div class="action-card" id="card-ingreso" onclick="abrirModal('ingreso')">
+        <div class="card-icon icon-ingreso">+</div>
+        <div class="card-title">Ingresos</div>
+        <div class="card-total total-ingreso" id="totalIngresos">Bs 0.00</div>
+      </div>
+
+      <div class="action-card" id="card-gasto" onclick="abrirModal('gasto')">
+        <div class="card-icon icon-gasto">&minus;</div>
+        <div class="card-title">Gastos</div>
+        <div class="card-total total-gasto" id="totalGastos">Bs 0.00</div>
+      </div>
+
+      <div class="action-card" id="card-deuda" onclick="abrirModal('deuda')">
+        <div class="card-icon"><span class="icon-deuda">i</span></div>
+        <div class="card-title">Se debe</div>
+        <div class="card-total total-deuda" id="totalDeudas">Bs 0.00</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>Historial</h2>
+      <div class="filter-pills">
+        <button class="pill-btn active" data-filter="todos" onclick="setFiltro('todos', this)">Todos</button>
+        <button class="pill-btn" data-filter="ingreso" onclick="setFiltro('ingreso', this)">Ingresos</button>
+        <button class="pill-btn" data-filter="gasto" onclick="setFiltro('gasto', this)">Gastos</button>
+        <button class="pill-btn" data-filter="deuda" onclick="setFiltro('deuda', this)">Se debe</button>
+      </div>
+    </div>
+
+    <div class="search-row">
+      <input type="text" id="busquedaInput" placeholder="Buscar por detalle..." oninput="renderizar()" />
+      <select id="pilarFiltro" onchange="renderizar()"></select>
+    </div>
+
+    <div class="mov-list" id="listaMovimientos"></div>
+
+    <div class="footer-tools">
+      <button class="btn-secondary" onclick="exportarJSON()">Exportar respaldo</button>
+      <button class="btn-secondary" onclick="document.getElementById('importFile').click()">Importar JSON</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarJSON(event)" />
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" onclick="cerrarModalSiFondo(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitulo">Registrar movimiento</h3>
+        <button class="close-btn" onclick="cerrarModal()">&times;</button>
+      </div>
+      <form id="movForm" onsubmit="guardarMovimiento(event)">
+        <input type="hidden" id="tipoInput" value="ingreso" />
+
+        <div class="form-group" id="grupoFijo" style="display:none;">
+          <label for="fijoSelect">⚡ Cargar Monto Fijo / Frecuente</label>
+          <select id="fijoSelect" onchange="aplicarMontoFijo(this.value)">
+            <option value="">-- Seleccionar --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="montoInput">Monto (Bs)</label>
+          <input type="number" id="montoInput" step="0.01" min="0.01" placeholder="0.00" required />
+        </div>
+
+        <div class="form-group">
+          <label for="descInput">Descripción / Concepto</label>
+          <input type="text" id="descInput" placeholder="Ej. Pago factura..." required />
+        </div>
+
+        <div class="form-group">
+          <label for="pilarInput">Entidad / Responsable</label>
+          <div class="input-row">
+            <select id="pilarInput"></select>
+            <button type="button" class="btn-add-inline" title="Añadir" onclick="agregarNuevaEntidad()">+</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="fechaInput">Fecha</label>
+          <input type="date" id="fechaInput" required />
+        </div>
+
+        <button type="submit" class="btn-submit bg-ingreso" id="btnGuardar">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'movimientos_panel_v4';
+    const PILARES_KEY = 'movimientos_pilares_v4';
+    const FIJOS_KEY = 'movimientos_fijos_v4';
+
+    const pilaresBasePorDefecto = [
+      "DELAPAZ", "EPSAS", "YPFB", "ORLANDO CEVERO", "ESTELA", "MARIBEL", "DONATO ESTRADA", "JACHA INTI", "TUMUPASA", "FULLTANK"
+    ];
+
+    const fijosBasePorDefecto = [
+      { nombre: "Salario Mensual Base", monto: 3500, desc: "Salario fijo mensual", tipo: "ingreso" },
+      { nombre: "Alquiler Fijo", monto: 1200, desc: "Pago alquiler mensual", tipo: "gasto" }
+    ];
+
+    let movimientos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let listaPilares = JSON.parse(localStorage.getItem(PILARES_KEY) || JSON.stringify(pilaresBasePorDefecto));
+    let montosFijos = JSON.parse(localStorage.getItem(FIJOS_KEY) || JSON.stringify(fijosBasePorDefecto));
+    let filtroActual = 'todos';
+
+    function actualizarSelectores() {
+      const selectFiltro = document.getElementById('pilarFiltro');
+      const selectModal = document.getElementById('pilarInput');
+
+      const valorFiltroActual = selectFiltro.value;
+      const valorModalActual = selectModal.value;
+
+      let htmlFiltro = '<option value="todos">Todos los registros</option>';
+      listaPilares.forEach(p => {
+        htmlFiltro += `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`;
+      });
+      selectFiltro.innerHTML = htmlFiltro;
+      if (selectFiltro.querySelector(`option[value="${CSS.escape(valorFiltroActual)}"]`)) {
+        selectFiltro.value = valorFiltroActual;
+      }
+
+      let htmlModal = '';
+      listaPilares.forEach(p => {
+        htmlModal += `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`;
+      });
+      selectModal.innerHTML = htmlModal;
+      if (selectModal.querySelector(`option[value="${CSS.escape(valorModalActual)}"]`)) {
+        selectModal.value = valorModalActual;
+      }
+    }
+
+    function actualizarSelectFijos(tipoActual) {
+      const selectFijo = document.getElementById('fijoSelect');
+      const grupoFijo = document.getElementById('grupoFijo');
+      const filtrados = montosFijos.filter(f => f.tipo === tipoActual);
+
+      if (filtrados.length === 0) {
+        grupoFijo.style.display = 'none';
+        return;
+      }
+
+      grupoFijo.style.display = 'block';
+      let html = '<option value="">⚡ Seleccionar monto fijo...</option>';
+      filtrados.forEach((f, idx) => {
+        html += `<option value="${idx}">${escapeHTML(f.nombre)} (${formatearBs(f.monto)})</option>`;
+      });
+      selectFijo.innerHTML = html;
+      selectFijo.value = "";
+    }
+
+    function aplicarMontoFijo(indexStr) {
+      if (indexStr === "") return;
+      const tipoActual = document.getElementById('tipoInput').value;
+      const filtrados = montosFijos.filter(f => f.tipo === tipoActual);
+      const seleccionado = filtrados[indexStr];
+
+      if (seleccionado) {
+        document.getElementById('montoInput').value = seleccionado.monto;
+        document.getElementById('descInput').value = seleccionado.desc;
+      }
+    }
+
+    function agregarNuevaEntidad() {
+      const nuevo = prompt("Ingrese el nombre de la nueva entidad:");
+      if (!nuevo || !nuevo.trim()) return;
+      const nombreLimpio = nuevo.trim().toUpperCase();
+
+      if (listaPilares.includes(nombreLimpio)) {
+        alert("Esta entidad ya existe.");
+        return;
+      }
+
+      listaPilares.push(nombreLimpio);
+      localStorage.setItem(PILARES_KEY, JSON.stringify(listaPilares));
+      actualizarSelectores();
+      document.getElementById('pilarInput').value = nombreLimpio;
+    }
+
+    function formatearBs(valor) {
+      return 'Bs ' + Number(valor || 0).toLocaleString('es-BO', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function actualizarTotales() {
+      let sumIngresos = 0, sumGastos = 0, sumDeudas = 0;
+
+      movimientos.forEach(m => {
+        const monto = parseFloat(m.monto) || 0;
+        if (m.tipo === 'ingreso') sumIngresos += monto;
+        else if (m.tipo === 'gasto') sumGastos += monto;
+        else if (m.tipo === 'deuda') sumDeudas += monto;
+      });
+
+      const saldo = sumIngresos - sumGastos;
+      document.getElementById('totalIngresos').textContent = formatearBs(sumIngresos);
+      document.getElementById('totalGastos').textContent = formatearBs(sumGastos);
+      document.getElementById('totalDeudas').textContent = formatearBs(sumDeudas);
+
+      const saldoEl = document.getElementById('saldoDisplay');
+      saldoEl.textContent = 'Saldo: ' + formatearBs(saldo);
+      saldoEl.className = 'saldo-pill ' + (saldo >= 0 ? 'saldo-positivo' : 'saldo-negativo');
+    }
+
+    function renderizar() {
+      actualizarTotales();
+      const texto = document.getElementById('busquedaInput').value.toLowerCase().trim();
+      const pilar = document.getElementById('pilarFiltro').value;
+      const lista = document.getElementById('listaMovimientos');
+
+      const filtrados = movimientos.filter(m => {
+        if (filtroActual !== 'todos' && m.tipo !== filtroActual) return false;
+        if (pilar !== 'todos' && m.pilar !== pilar) return false;
+        if (texto && !m.descripcion.toLowerCase().includes(texto) && !(m.pilar || '').toLowerCase().includes(texto)) return false;
+        return true;
+      }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.id - a.id);
+
+      if (filtrados.length === 0) {
+        lista.innerHTML = '<div class="empty-state">No hay movimientos registrados.</div>';
+        return;
+      }
+
+      lista.innerHTML = filtrados.map(m => {
+        const signo = m.tipo === 'ingreso' ? '+' : (m.tipo === 'gasto' ? '-' : '');
+        const etiquetaTipo = m.tipo === 'ingreso' ? 'Ingreso' : (m.tipo === 'gasto' ? 'Gasto' : 'Se debe');
+        return `
+          <div class="mov-item tipo-${m.tipo}">
+            <div class="mov-info">
+              <div class="mov-desc">${escapeHTML(m.descripcion)}</div>
+              <div class="mov-meta">
+                <span class="badge-pilar">${escapeHTML(m.pilar || 'DELAPAZ')}</span>
+                <span>${etiquetaTipo}</span>
+                <span>&bull; ${m.fecha}</span>
+              </div>
+            </div>
+            <div class="mov-right">
+              <span class="mov-monto monto-${m.tipo}">${signo} ${formatearBs(m.monto)}</span>
+              <button class="btn-del" title="Eliminar" onclick="eliminarMovimiento(${m.id})">&times;</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHTML(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function abrirModal(tipo) {
+      document.getElementById('tipoInput').value = tipo;
+      document.getElementById('montoInput').value = '';
+      document.getElementById('descInput').value = '';
+      document.getElementById('fechaInput').value = new Date().toISOString().split('T')[0];
+      actualizarSelectFijos(tipo);
+
+      const titulo = document.getElementById('modalTitulo');
+      const btn = document.getElementById('btnGuardar');
+      btn.className = 'btn-submit';
+
+      if (tipo === 'ingreso') {
+        titulo.textContent = 'Registrar Ingreso';
+        btn.textContent = 'Guardar Ingreso';
+        btn.classList.add('bg-ingreso');
+      } else if (tipo === 'gasto') {
+        titulo.textContent = 'Registrar Gasto';
+        btn.textContent = 'Guardar Gasto';
+        btn.classList.add('bg-gasto');
+      } else {
+        titulo.textContent = 'Registrar Se debe';
+        btn.textContent = 'Guardar en Se debe';
+        btn.classList.add('bg-deuda');
+      }
+
+      document.getElementById('modalBackdrop').classList.add('open');
+    }
+
+    function cerrarModal() {
+      document.getElementById('modalBackdrop').classList.remove('open');
+    }
+
+    function cerrarModalSiFondo(e) {
+      if (e.target.id === 'modalBackdrop') cerrarModal();
+    }
+
+    function guardarMovimiento(e) {
+      e.preventDefault();
+      const tipo = document.getElementById('tipoInput').value;
+      const monto = parseFloat(document.getElementById('montoInput').value);
+      const descripcion = document.getElementById('descInput').value.trim();
+      const pilar = document.getElementById('pilarInput').value;
+      const fecha = document.getElementById('fechaInput').value;
+
+      if (!monto || monto <= 0 || !descripcion) return;
+
+      movimientos.push({ id: Date.now(), tipo, monto, descripcion, pilar, fecha });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(movimientos));
+      cerrarModal();
+      renderizar();
+    }
+
+    function eliminarMovimiento(id) {
+      if (!confirm('¿Eliminar este registro?')) return;
+      movimientos = movimientos.filter(m => m.id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(movimientos));
+      renderizar();
+    }
+
+    function setFiltro(filtro, btn) {
+      filtroActual = filtro;
+      document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderizar();
+    }
+
+    function exportarJSON() {
+      const dataExport = { movimientos: movimientos, pilares: listaPilares, fijos: montosFijos };
+      const blob = new Blob([JSON.stringify(dataExport, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `respaldo-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importarJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (Array.isArray(data)) movimientos = data;
+          else if (data && Array.isArray(data.movimientos)) {
+            movimientos = data.movimientos;
+            if (Array.isArray(data.pilares)) { listaPilares = data.pilares; localStorage.setItem(PILARES_KEY, JSON.stringify(listaPilares)); }
+          }
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(movimientos));
+          actualizarSelectores();
+          renderizar();
+          alert('Importado correctamente.');
+        } catch {
+          alert('Archivo inválido.');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    actualizarSelectores();
+    renderizar();
+  </script>
+</body>
+</html>
